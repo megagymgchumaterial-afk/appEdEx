@@ -3,64 +3,116 @@
 | DOMAIN / PROGRAMA / TYPES
 |==============================================================================
 |
-| Entidad principal del seguimiento de entrenamiento.
+| Dominio de definición estructural del programa de entrenamiento.
 |
-| Un Programa representa un plan de entrenamiento personalizado
-| asignado a una persona concreta.
+| Este módulo representa la PRESCRIPCIÓN BASE diseñada por el editor /
+| instructor, independiente de una persona concreta.
 |
-| Incluye:
-| - estructura de entrenamientos
-| - ejercicios
-| - grupos
-| - progresión global por bloques
+| Un Programa define:
+| - cantidad de bloques
+| - entrenamientos por bloque
+| - progresión global por bloque
+| - ejercicios y grupos
 | - configuración avanzada
-| - estado del programa
+| - overrides estructurales de progresión
 |
-| No incluye:
-| - ejecución puntual de una sesión
-| - progreso histórico registrado
-| - métricas derivadas
+| Este módulo NO guarda:
+| - progreso real de una persona
+| - pesos realmente usados
+| - repeticiones efectivamente realizadas
+| - cumplimiento de sesiones
+| - avance actual dentro del programa
 |
-| Eso pertenece a otros dominios del sistema.
+| Todo eso pertenece al dominio de PROGRESO / EJECUCIÓN.
 |
 |==============================================================================
 */
-
-import type { PersonaId } from "../persona";
 
 /*
 |--------------------------------------------------------------------------
 | IDS
 |--------------------------------------------------------------------------
+|
+| Identificadores del dominio programa.
+|
+| ProgramaId:
+|   identifica un programa completo.
+|
+| EntrenamientoProgramaId:
+|   identifica un entrenamiento/día dentro del programa.
+|
+| ItemProgramaId:
+|   identifica un nodo del árbol del programa
+|   (ejercicio o grupo).
+|
+| EjercicioId / MaterialId:
+|   referencian entidades de catálogo externas al programa.
+|
 */
 
 export type ProgramaId = string;
+
 export type EntrenamientoProgramaId = string;
+
 export type ItemProgramaId = string;
+
 export type EjercicioId = string;
+
 export type MaterialId = string;
+
+/*
+|--------------------------------------------------------------------------
+| ESTADO DEL PROGRAMA
+|--------------------------------------------------------------------------
+|
+| Estado editorial del programa.
+|
+| No representa el avance de una persona dentro del programa,
+| sino el estado del objeto Programa dentro del editor.
+|
+| en_proceso:
+|   el programa todavía está siendo armado o ajustado.
+|
+| completa:
+|   el programa ya tiene una estructura lista para usarse / asignarse.
+|
+*/
+
+export type EstadoPrograma =
+  | "en_proceso"
+  | "completa";
 
 /*
 |--------------------------------------------------------------------------
 | PROGRESIÓN GLOBAL DEL BLOQUE
 |--------------------------------------------------------------------------
 |
-| Configuración general del programa por bloque.
+| Define la progresión general esperada para un bloque.
 |
-| Define cómo evolucionan variables base
-| a lo largo del programa.
+| En tu lógica de negocio:
+| - bloque ~= semana / etapa
+| - entrenamiento ~= día / sesión distinta
+|
+| Entonces cada bloque puede tener una progresión global diferente
+| que luego aplica sobre los entrenamientos de ese bloque,
+| salvo que un ejercicio o grupo tenga un override propio.
 |
 | Ejemplo:
-| - bloque 1: 3 x 10
-| - bloque 2: 4 x 8
+| - bloque 1: 3 x 12, 60 s
+| - bloque 2: 4 x 10, 75 s
+| - bloque 3: 4 x 8, 90 s
 |
 */
 
 export type ProgresionBloque = {
   bloque: number;
+
   series: number;
+
   reps: number;
-  descansoSegundos: number | null;
+
+  descansoSegundos:
+    number | null;
 };
 
 /*
@@ -68,20 +120,27 @@ export type ProgresionBloque = {
 | OVERRIDE DE PROGRESIÓN
 |--------------------------------------------------------------------------
 |
-| Permite que un ejercicio o un grupo utilicen
-| una progresión distinta a la progresión global del programa.
+| Permite que un ejercicio o un grupo utilicen una progresión
+| distinta a la progresión global del bloque.
 |
 | Ejemplo:
-| - el programa define 4x8 para el bloque 2
-| - pero un ejercicio puntual usa 3x12 en ese bloque
+| - el bloque 2 del programa dice 4 x 10
+| - pero sentadilla usa 5 x 5
+|
+| Esto forma parte de la PRESCRIPCIÓN estructural del programa,
+| no de la ejecución real del entrenado.
 |
 */
 
 export type OverrideProgresion = {
   bloque: number;
+
   series: number;
+
   reps: number;
-  descansoSegundos: number | null;
+
+  descansoSegundos:
+    number | null;
 };
 
 /*
@@ -89,12 +148,10 @@ export type OverrideProgresion = {
 | VALORES POSIBLES DE CONFIGURACIÓN
 |--------------------------------------------------------------------------
 |
-| Unión de valores que pueden ser manipulados
-| desde formularios dinámicos del editor.
+| Unión de valores admitidos por setters / formularios dinámicos
+| de configuración avanzada.
 |
-| No representa una entidad del dominio en sí,
-| sino el rango de valores admitidos por los setters
-| y configuradores genéricos.
+| No representa una entidad del dominio por sí sola.
 |
 */
 
@@ -110,15 +167,19 @@ export type ValorConfiguracion =
 | CONFIGURACIÓN AVANZADA
 |--------------------------------------------------------------------------
 |
-| Configuración adicional aplicable tanto a:
-| - ejercicios
-| - grupos
+| Configuración aplicable tanto a ejercicios como a grupos.
 |
-| Centraliza:
+| Reúne:
 | - overrides de progresión
 | - intensidad
 | - descanso
-| - técnicas de entrenamiento
+| - técnicas especiales
+|
+| IMPORTANTE:
+| -----------
+| Esto representa la indicación / configuración base del programa.
+| Si luego la persona hace otra cosa al ejecutar,
+| esa diferencia NO se guarda acá.
 |
 */
 
@@ -130,7 +191,9 @@ export type ConfiguracionAvanzada = {
   */
 
   overrideActivo: boolean;
-  overrideProgresiones: OverrideProgresion[];
+
+  overrideProgresiones:
+    OverrideProgresion[];
 
   /*
   |----------------------------------------------------------------------
@@ -139,6 +202,7 @@ export type ConfiguracionAvanzada = {
   */
 
   rir: number | null;
+
   tempo: string | null;
 
   /*
@@ -147,7 +211,9 @@ export type ConfiguracionAvanzada = {
   |----------------------------------------------------------------------
   */
 
-  descansoSegundos: number | null;
+  descansoSegundos:
+    number | null;
+
   usarTimer: boolean;
 
   /*
@@ -157,7 +223,9 @@ export type ConfiguracionAvanzada = {
   */
 
   warmup: boolean;
+
   dropset: boolean;
+
   cluster: boolean;
 
   /*
@@ -167,6 +235,7 @@ export type ConfiguracionAvanzada = {
   */
 
   restPause?: boolean;
+
   myoReps?: boolean;
 };
 
@@ -175,31 +244,46 @@ export type ConfiguracionAvanzada = {
 | EJERCICIO DEL PROGRAMA
 |--------------------------------------------------------------------------
 |
-| Instancia concreta de un ejercicio
-| dentro de un programa.
+| Nodo concreto de ejercicio dentro de un programa.
 |
-| No representa el catálogo general de ejercicios,
-| sino el nodo ya insertado dentro del árbol del programa.
+| Esto NO es el catálogo general de ejercicios,
+| sino la instancia ya insertada dentro de la estructura del programa.
+|
+| Ejemplo:
+| - ejercicioId = sentadilla trasera
+| - materialId = barra
+| - configuracion = override / rir / tempo / etc.
 |
 */
 
 export type EjercicioPrograma = {
   id: ItemProgramaId;
+
   ejercicioId: EjercicioId;
+
   materialId: MaterialId;
+
   notas: string;
-  configuracion: ConfiguracionAvanzada;
+
+  configuracion:
+    ConfiguracionAvanzada;
 };
 
 /*
 |--------------------------------------------------------------------------
 | ITEM EJERCICIO
 |--------------------------------------------------------------------------
+|
+| Wrapper discriminado para trabajar con un árbol uniforme
+| de items dentro de un entrenamiento o grupo.
+|
 */
 
 export interface EjercicioProgramaItem {
   tipo: "ejercicio";
-  contenido: EjercicioPrograma;
+
+  contenido:
+    EjercicioPrograma;
 }
 
 /*
@@ -207,9 +291,9 @@ export interface EjercicioProgramaItem {
 | GRUPO DEL PROGRAMA
 |--------------------------------------------------------------------------
 |
-| Nodo agrupador dentro de un entrenamiento.
+| Nodo agrupador dentro del programa.
 |
-| Permite estructuras anidadas del tipo:
+| Permite construir estructuras anidadas del tipo:
 |
 | Grupo
 | ├─ Ejercicio
@@ -218,7 +302,7 @@ export interface EjercicioProgramaItem {
 |    ├─ Ejercicio
 |    └─ Ejercicio
 |
-| Esto habilita:
+| Casos de uso:
 | - superseries
 | - circuitos
 | - bloques técnicos
@@ -228,10 +312,16 @@ export interface EjercicioProgramaItem {
 
 export interface GrupoPrograma {
   id: ItemProgramaId;
+
   nombre: string;
+
   notas: string;
-  configuracion: ConfiguracionAvanzada;
-  items: ItemPrograma[];
+
+  configuracion:
+    ConfiguracionAvanzada;
+
+  items:
+    ItemPrograma[];
 }
 
 /*
@@ -242,7 +332,9 @@ export interface GrupoPrograma {
 
 export interface GrupoProgramaItem {
   tipo: "grupo";
-  contenido: GrupoPrograma;
+
+  contenido:
+    GrupoPrograma;
 }
 
 /*
@@ -250,10 +342,10 @@ export interface GrupoProgramaItem {
 | ITEM DEL PROGRAMA
 |--------------------------------------------------------------------------
 |
-| Unidad mínima renderizable/manipulable dentro del árbol.
+| Unidad mínima renderizable / manipulable del árbol del programa.
 |
-| Toda la lógica de construcción del programa
-| debería trabajar con esta unión discriminada.
+| Toda la lógica del editor debería trabajar principalmente
+| con esta unión discriminada.
 |
 */
 
@@ -266,19 +358,23 @@ export type ItemPrograma =
 | DRAFT TEMPORAL DE EJERCICIO
 |--------------------------------------------------------------------------
 |
-| Se utiliza mientras el editor configura un ejercicio
+| Estructura utilizada mientras el editor configura un ejercicio
 | antes de insertarlo definitivamente en el programa.
 |
-| A diferencia de EjercicioPrograma,
-| el draft todavía no necesita un id de nodo persistido.
+| A diferencia de EjercicioPrograma:
+| - todavía no necesita un id persistido del nodo
 |
 */
 
 export type EjercicioDraft = {
   ejercicioId: EjercicioId;
+
   materialId: MaterialId;
+
   notas: string;
-  configuracion: ConfiguracionAvanzada;
+
+  configuracion:
+    ConfiguracionAvanzada;
 };
 
 /*
@@ -286,50 +382,87 @@ export type EjercicioDraft = {
 | ENTRENAMIENTO DEL PROGRAMA
 |--------------------------------------------------------------------------
 |
-| Unidad principal de organización del programa.
+| Representa un entrenamiento / día dentro del programa.
 |
-| Cada entrenamiento contiene una lista ordenada de items
-| (ejercicios y/o grupos).
+| En tu lógica:
+| - un bloque tiene X entrenamientos
+| - cada entrenamiento tiene sus ejercicios / grupos
+|
+| Ejemplo:
+| entrenamientosPorBloque = 3
+|
+| Entrenamiento 1:
+| - tren inferior
+|
+| Entrenamiento 2:
+| - empuje
+|
+| Entrenamiento 3:
+| - tracción
+|
+| Cada entrenamiento se reutiliza conceptualmente a lo largo de
+| los distintos bloques, cambiando la progresión global del bloque
+| o los overrides particulares.
 |
 */
 
 export type EntrenamientoPrograma = {
   id: EntrenamientoProgramaId;
+
+  /*
+  |----------------------------------------------------------------------
+  | ORDEN
+  |----------------------------------------------------------------------
+  |
+  | Posición del entrenamiento dentro del bloque.
+  |
+  | Ejemplo:
+  | - 1 = día A
+  | - 2 = día B
+  | - 3 = día C
+  |
+  */
+
   orden: number;
-  items: ItemPrograma[];
+
+  /*
+  |----------------------------------------------------------------------
+  | IDENTIDAD VISIBLE
+  |----------------------------------------------------------------------
+  |
+  | Permite que el editor asigne un nombre al entrenamiento
+  | para hacerlo más legible.
+  |
+  | Ejemplos:
+  | - Tren inferior
+  | - Empuje
+  | - Día A
+  |
+  */
+
+  nombre: string;
+
+  notas: string;
+
+  items:
+    ItemPrograma[];
 };
-
-/*
-|--------------------------------------------------------------------------
-| ESTADO DEL PROGRAMA
-|--------------------------------------------------------------------------
-|
-| "en_proceso" y "completa" preservan la semántica actual del legacy.
-|
-| Más adelante podría evolucionar a algo más expresivo, por ejemplo:
-| - borrador
-| - activo
-| - pausado
-| - finalizado
-|
-*/
-
-export type EstadoPrograma =
-  | "en_proceso"
-  | "completa";
 
 /*
 |--------------------------------------------------------------------------
 | PROGRAMA
 |--------------------------------------------------------------------------
 |
-| Entidad principal del dominio.
+| Entidad principal de definición del plan de entrenamiento.
 |
-| Representa un plan de entrenamiento personalizado
-| asignado a una persona.
+| Representa una PRESCRIPCIÓN BASE reutilizable:
+| - puede asignarse a una o varias personas
+| - no guarda el avance individual
+| - no guarda la ejecución real
 |
-| Conserva la lógica central del legacy "Rutina",
-| pero desacoplada de nombres como "alumno" o "rutina".
+| El progreso individual se resuelve desde:
+| - AsignacionPrograma
+| - SesionEntrenamiento
 |
 */
 
@@ -342,16 +475,24 @@ export type Programa = {
 
   id: ProgramaId;
 
-  personaId: PersonaId;
+  nombre: string;
+
+  descripcion: string;
 
   /*
   |----------------------------------------------------------------------
-  | FECHAS
+  | FECHAS EDITORIALES
   |----------------------------------------------------------------------
+  |
+  | No representan la fecha de ejecución de una persona,
+  | sino la vida del objeto Programa dentro del editor.
+  |
   */
 
-  fechaInicio: string;
-  fechaUltimaEdicion: string;
+  fechaCreacion: string;
+
+  fechaUltimaEdicion:
+    string;
 
   /*
   |----------------------------------------------------------------------
@@ -360,7 +501,9 @@ export type Programa = {
   */
 
   cantidadBloques: number;
-  entrenamientosPorBloque: number;
+
+  entrenamientosPorBloque:
+    number;
 
   /*
   |----------------------------------------------------------------------
@@ -368,15 +511,17 @@ export type Programa = {
   |----------------------------------------------------------------------
   */
 
-  progresionGlobal: ProgresionBloque[];
+  progresionGlobal:
+    ProgresionBloque[];
 
   /*
   |----------------------------------------------------------------------
-  | ESTADO
+  | ESTADO EDITORIAL
   |----------------------------------------------------------------------
   */
 
   activa: boolean;
+
   estado: EstadoPrograma;
 
   /*
@@ -385,5 +530,6 @@ export type Programa = {
   |----------------------------------------------------------------------
   */
 
-  entrenamientos: EntrenamientoPrograma[];
+  entrenamientos:
+    EntrenamientoPrograma[];
 };

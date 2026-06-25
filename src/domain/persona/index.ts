@@ -11,10 +11,6 @@
 | desde un único lugar, sin tener que conocer la estructura interna
 | de archivos del módulo.
 |
-| Ejemplo de uso:
-| ---------------
-| import type { Persona, SeguimientoPersona } from "../../domain/persona";
-|
 |==============================================================================
 */
 
@@ -24,7 +20,7 @@
 |--------------------------------------------------------------------------
 */
 
-export type { Persona } from "./types.ts";
+export type { Persona } from "./types";
 
 /*
 |--------------------------------------------------------------------------
@@ -54,7 +50,7 @@ export type {
   MedicionPersonaId,
   AsistenciaPersona,
   SeguimientoPersona,
-} from "./tracking.types.ts";
+} from "./tracking.types";
 
 /*
 |--------------------------------------------------------------------------
@@ -65,4 +61,4 @@ export type {
 export type {
   SituacionEconomicaPersona,
   InformacionPrivadaPersona,
-} from "./admin.types.ts";
+} from "./admin.types";

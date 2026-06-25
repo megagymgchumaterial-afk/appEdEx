@@ -37,11 +37,11 @@ import type {
 
 import type {
   SeguimientoPersona,
-} from "./tracking.types.ts";
+} from "./tracking.types";
 
 import type {
   InformacionPrivadaPersona,
-} from "./admin.types.ts";
+} from "./admin.types";
 
 /*
 |--------------------------------------------------------------------------
@@ -69,11 +69,8 @@ export type Persona = {
   */
 
   id: PersonaId;
-
   nombre: string;
-
   apellido: string;
-
   nrodoc: string;
 
   /*

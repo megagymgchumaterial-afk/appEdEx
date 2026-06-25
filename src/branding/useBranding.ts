@@ -7,7 +7,7 @@ import type { AppBranding } from "./types.ts";
  *
  * En esta primera etapa devuelve el branding resuelto a partir
  * de los defaults del sistema.
- *
+ * 
  * Más adelante este hook puede:
  * - leer branding persistido del usuario/editor
  * - leer branding por contexto/tenant
